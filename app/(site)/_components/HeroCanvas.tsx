@@ -53,41 +53,42 @@ export default function HeroCanvas(){
 
   useEffect(()=>{
     const canvas = ref.current!
-    const gl = canvas.getContext('webgl2', {antialias:false, premultipliedAlpha:false})
+    const gl = canvas.getContext('webgl2', {antialias:false, premultipliedAlpha:false}) as WebGL2RenderingContext | null
     if(!gl){ console.warn('WebGL2 not supported'); return }
+    const GL = gl as WebGL2RenderingContext
 
     // compile helpers
     function compile(type:number, src:string){
-      const s = gl.createShader(type)!; gl.shaderSource(s, src); gl.compileShader(s);
-      if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)||'shader error')
+      const s = GL.createShader(type)!; GL.shaderSource(s, src); GL.compileShader(s);
+      if(!GL.getShaderParameter(s, GL.COMPILE_STATUS)) throw new Error(GL.getShaderInfoLog(s)||'shader error')
       return s
     }
-    const vs = compile(gl.VERTEX_SHADER, vert)
-    const fs = compile(gl.FRAGMENT_SHADER, frag)
-    const prog = gl.createProgram()!; gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog)
-    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog)||'link error')
-    gl.useProgram(prog)
+    const vs = compile(GL.VERTEX_SHADER, vert)
+    const fs = compile(GL.FRAGMENT_SHADER, frag)
+    const prog = GL.createProgram()!; GL.attachShader(prog, vs); GL.attachShader(prog, fs); GL.linkProgram(prog)
+    if(!GL.getProgramParameter(prog, GL.LINK_STATUS)) throw new Error(GL.getProgramInfoLog(prog)||'link error')
+    GL.useProgram(prog)
 
     // fullscreen quad
-    const pos = gl.createBuffer()!
-    gl.bindBuffer(gl.ARRAY_BUFFER, pos)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    const pos = GL.createBuffer()!
+    GL.bindBuffer(GL.ARRAY_BUFFER, pos)
+    GL.bufferData(GL.ARRAY_BUFFER, new Float32Array([
       -1,-1,  1,-1,  -1, 1,
       -1, 1,  1,-1,   1, 1
-    ]), gl.STATIC_DRAW)
-    const loc = gl.getAttribLocation(prog, 'position')
-    gl.enableVertexAttribArray(loc)
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
+    ]), GL.STATIC_DRAW)
+    const loc = GL.getAttribLocation(prog, 'position')
+    GL.enableVertexAttribArray(loc)
+    GL.vertexAttribPointer(loc, 2, GL.FLOAT, false, 0, 0)
 
-    const uRes = gl.getUniformLocation(prog, 'u_res')
-    const uTime = gl.getUniformLocation(prog, 'u_time')
+    const uRes = GL.getUniformLocation(prog, 'u_res')
+    const uTime = GL.getUniformLocation(prog, 'u_time')
 
     function resize(){
       const dpr = Math.min(window.devicePixelRatio||1, 2)
       const w = canvas.clientWidth, h = canvas.clientHeight
       canvas.width = Math.max(1, Math.floor(w*dpr))
       canvas.height = Math.max(1, Math.floor(h*dpr))
-      gl.viewport(0,0,canvas.width, canvas.height)
+      GL.viewport(0,0,canvas.width, canvas.height)
     }
     const ro = new ResizeObserver(resize); ro.observe(canvas); resize()
 
@@ -95,13 +96,13 @@ export default function HeroCanvas(){
     function frame(){
       raf = requestAnimationFrame(frame)
       const t = (performance.now()-start)/1000
-      gl.uniform2f(uRes, canvas.width, canvas.height)
-      gl.uniform1f(uTime, t)
-      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      GL.uniform2f(uRes, canvas.width, canvas.height)
+      GL.uniform1f(uTime, t)
+      GL.drawArrays(GL.TRIANGLES, 0, 6)
     }
     frame()
 
-    return ()=>{ cancelAnimationFrame(raf); ro.disconnect(); gl.deleteBuffer(pos); gl.deleteProgram(prog); gl.deleteShader(vs); gl.deleteShader(fs) }
+    return ()=>{ cancelAnimationFrame(raf); ro.disconnect(); GL.deleteBuffer(pos); GL.deleteProgram(prog); GL.deleteShader(vs); GL.deleteShader(fs) }
   }, [])
 
   return <canvas className="liquid" ref={ref} />
